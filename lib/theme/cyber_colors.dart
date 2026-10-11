@@ -5,6 +5,7 @@ class CyberColors {
   static const Color cyanPrimary = Color(0xFF00F2FE);
   static const Color blueElectric = Color(0xFF4FACFE);
   static const Color purpleNeon = Color(0xFF8B5CF6);
+  static const Color purpleAccent = Color(0xFF8B5CF6);
   static const Color pinkAccent = Color(0xFFFF2E93);
   
   // Status Colors

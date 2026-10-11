@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import '../utils/currency_helper.dart';
 import '../providers/store_provider.dart';
 import '../theme/cyber_colors.dart';
 import 'checkout_modal.dart';
@@ -37,7 +37,7 @@ class _CartDrawerState extends State<CartDrawer> {
         ),
       );
     } else {
-      setState(() => _promoError = 'Invalid code. Try CYBER20 or FUTURE15');
+      setState(() => _promoError = 'Invalid code. Try CYBERINDIA or FESTIVE15');
     }
   }
 
@@ -45,7 +45,7 @@ class _CartDrawerState extends State<CartDrawer> {
   Widget build(BuildContext context) {
     final store = context.watch<StoreProvider>();
     final isDark = store.isDarkMode;
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+
 
     return Container(
       width: 440,
@@ -175,7 +175,7 @@ class _CartDrawerState extends State<CartDrawer> {
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: store.cart.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, error) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = store.cart[index];
                       return Container(
@@ -202,7 +202,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                 width: 64,
                                 height: 64,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (_, error, stack) => Container(
                                   width: 64,
                                   height: 64,
                                   color: Colors.grey.withOpacity(0.2),
@@ -240,7 +240,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                   ],
                                   const SizedBox(height: 6),
                                   Text(
-                                    currency.format(item.product.price),
+                                    CurrencyHelper.format(item.product.price),
                                     style: GoogleFonts.spaceGrotesk(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
@@ -321,7 +321,7 @@ class _CartDrawerState extends State<CartDrawer> {
                               style: GoogleFonts.spaceGrotesk(fontSize: 12),
                               textCapitalization: TextCapitalization.characters,
                               decoration: InputDecoration(
-                                hintText: 'Promo code (e.g. CYBER20)',
+                                hintText: 'Promo code (e.g. CYBERINDIA)',
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                                 errorText: _promoError,
                               ),
@@ -351,11 +351,11 @@ class _CartDrawerState extends State<CartDrawer> {
                         ),
                         InkWell(
                           onTap: () {
-                            _promoController.text = 'CYBER20';
+                            _promoController.text = 'CYBERINDIA';
                             _applyCoupon(store);
                           },
                           child: Text(
-                            'CYBER20 (20% OFF)',
+                            'CYBERINDIA (20% OFF)',
                             style: GoogleFonts.spaceGrotesk(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -402,21 +402,21 @@ class _CartDrawerState extends State<CartDrawer> {
                   const SizedBox(height: 16),
 
                   // Financial summary
-                  _summaryRow('Subtotal', currency.format(store.subtotal), isDark),
+                  _summaryRow('Subtotal', CurrencyHelper.format(store.subtotal), isDark),
                   if (store.discountAmount > 0)
                     _summaryRow(
                       'Discount (${(store.promoDiscountPercent * 100).toInt()}%)',
-                      '-${currency.format(store.discountAmount)}',
+                      '-${CurrencyHelper.format(store.discountAmount)}',
                       isDark,
                       valueColor: CyberColors.emeraldGreen,
                     ),
                   _summaryRow(
                     'Shipping',
-                    store.shippingFee == 0.0 ? 'FREE' : currency.format(store.shippingFee),
+                    store.shippingFee == 0.0 ? 'FREE' : CurrencyHelper.format(store.shippingFee),
                     isDark,
                     valueColor: store.shippingFee == 0.0 ? CyberColors.emeraldGreen : null,
                   ),
-                  _summaryRow('Estimated Tax (8%)', currency.format(store.estimatedTax), isDark),
+                  _summaryRow('GST (18% CGST+SGST)', CurrencyHelper.format(store.estimatedTax), isDark),
                   const Divider(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -429,7 +429,7 @@ class _CartDrawerState extends State<CartDrawer> {
                         ),
                       ),
                       Text(
-                        currency.format(store.totalAmount),
+                        CurrencyHelper.format(store.totalAmount),
                         style: GoogleFonts.spaceGrotesk(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
@@ -459,7 +459,7 @@ class _CartDrawerState extends State<CartDrawer> {
                       },
                       icon: const Icon(Icons.lock_outline_rounded, size: 18),
                       label: Text(
-                        'Proceed to Checkout (${currency.format(store.totalAmount)})',
+                        'Proceed to Checkout (${CurrencyHelper.format(store.totalAmount)})',
                         style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold),
                       ),
                     ),

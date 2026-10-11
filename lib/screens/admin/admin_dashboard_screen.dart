@@ -8,9 +8,10 @@ import '../../models/order.dart';
 import '../../providers/store_provider.dart';
 import '../../theme/cyber_colors.dart';
 import '../../widgets/cyber_badge.dart';
+import '../../utils/currency_helper.dart';
 import '../../widgets/responsive_layout.dart';
-import '../../data/mock_data.dart';
 import '../customer/order_tracking_screen.dart';
+import 'admin_categories_view.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -49,6 +50,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _buildOverviewTab(store, isDark),
                       _buildProductsTab(store, isDark),
                       _buildOrdersTab(store, isDark),
+                      const AdminCategoriesView(),
                       _buildInventoryTab(store, isDark),
                     ],
                   ),
@@ -70,6 +72,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Overview'),
                 BottomNavigationBarItem(icon: Icon(Icons.inventory_2_rounded), label: 'Products'),
                 BottomNavigationBarItem(icon: Icon(Icons.receipt_long_rounded), label: 'Orders'),
+                BottomNavigationBarItem(icon: Icon(Icons.category_rounded), label: 'Categories'),
                 BottomNavigationBarItem(icon: Icon(Icons.warning_amber_rounded), label: 'Inventory'),
               ],
             )
@@ -83,6 +86,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       {'icon': Icons.dashboard_rounded, 'label': 'Dashboard'},
       {'icon': Icons.inventory_2_rounded, 'label': 'Products Catalog'},
       {'icon': Icons.receipt_long_rounded, 'label': 'Order Management'},
+      {'icon': Icons.category_rounded, 'label': 'Categories & Depts'},
       {'icon': Icons.warehouse_rounded, 'label': 'Stock & Inventory'},
     ];
 
@@ -198,17 +202,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 children: [
                   Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 16,
-                        backgroundImage: NetworkImage('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: CyberColors.neonPurpleGradient,
+                        ),
+                        child: Center(
+                          child: Text(
+                            store.currentUser?.initials ?? 'AV',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Alex Vance', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
-                            Text('Super Administrator', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey)),
+                            Text(
+                              store.currentUser?.name ?? 'Alex Vance',
+                              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              store.currentUser?.roleDisplayName ?? 'Super Administrator',
+                              style: GoogleFonts.inter(fontSize: 10, color: Colors.grey),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
                       ),
@@ -237,7 +263,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // Top header for Admin
   Widget _buildAdminTopHeader(StoreProvider store, bool isDark) {
-    final titles = ['Dashboard & Analytics', 'Product Inventory (CRUD)', 'Orders Pipeline', 'Critical Stock Monitor'];
+    final titles = ['Dashboard & Analytics', 'Product Inventory (CRUD)', 'Orders Pipeline', 'Category & Dept Engine', 'Critical Stock Monitor'];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -319,7 +345,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // TAB 1: OVERVIEW & ANALYTICS
   Widget _buildOverviewTab(StoreProvider store, bool isDark) {
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    // currency via CurrencyHelper
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -338,7 +364,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 children: [
                   _metricCard(
                     title: 'Total Revenue',
-                    value: currency.format(store.totalRevenue),
+                    value: CurrencyHelper.format(store.totalRevenue),
                     change: '+24.8% vs last month',
                     icon: Icons.payments_outlined,
                     color: CyberColors.emeraldGreen,
@@ -551,7 +577,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       reservedSize: 42,
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          '\$${value.toInt()}k',
+                          '₹${value.toInt()}L',
                           style: GoogleFonts.spaceGrotesk(fontSize: 10, color: Colors.grey),
                         );
                       },
@@ -637,7 +663,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         children: [
                           Text(entry.key, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 13)),
                           Text(
-                            '\$${entry.value.toStringAsFixed(0)} (${(percent * 100).toStringAsFixed(1)}%)',
+                            '${CurrencyHelper.format(entry.value)} (${(percent * 100).toStringAsFixed(1)}%)',
                             style: GoogleFonts.spaceGrotesk(fontSize: 12, color: CyberColors.cyanPrimary),
                           ),
                         ],
@@ -661,7 +687,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildRecentOrdersSection(StoreProvider store, bool isDark) {
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    // currency via CurrencyHelper
     final orders = store.orders.take(5).toList();
 
     return Container(
@@ -694,7 +720,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: orders.length,
-            separatorBuilder: (_, __) => const Divider(height: 20),
+            separatorBuilder: (_, error) => const Divider(height: 20),
             itemBuilder: (context, index) {
               final o = orders[index];
               return Row(
@@ -729,7 +755,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Expanded(
                     flex: 2,
                     child: Text(
-                      currency.format(o.total),
+                      CurrencyHelper.format(o.total),
                       style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),
@@ -745,7 +771,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // TAB 2: PRODUCTS CRUD
   Widget _buildProductsTab(StoreProvider store, bool isDark) {
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    // currency via CurrencyHelper
     final products = store.allProducts.where((p) {
       if (_productSearchQuery.isEmpty) return true;
       return p.name.toLowerCase().contains(_productSearchQuery.toLowerCase()) ||
@@ -804,7 +830,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: products.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, error) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final p = products[index];
 
@@ -820,7 +846,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           width: 48,
                           height: 48,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (_, error, stack) => Container(
                             width: 48,
                             height: 48,
                             color: Colors.grey[800],
@@ -854,7 +880,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       Expanded(
                         flex: 2,
                         child: Text(
-                          currency.format(p.price),
+                          CurrencyHelper.format(p.price),
                           style: GoogleFonts.spaceGrotesk(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
@@ -908,7 +934,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // TAB 3: ORDERS MANAGEMENT
   Widget _buildOrdersTab(StoreProvider store, bool isDark) {
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    // currency via CurrencyHelper
     final orders = store.orders.where((o) {
       if (_selectedOrderStatusFilter != null && o.status != _selectedOrderStatusFilter) {
         return false;
@@ -985,7 +1011,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: orders.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, error) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final o = orders[index];
 
@@ -1024,7 +1050,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              currency.format(o.total),
+                              CurrencyHelper.format(o.total),
                               style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             Text('${o.items.length} items', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
@@ -1200,14 +1226,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final nameCtrl = TextEditingController(text: existingProduct?.name ?? '');
     final brandCtrl = TextEditingController(text: existingProduct?.brand ?? 'CyberTech');
     final descCtrl = TextEditingController(text: existingProduct?.description ?? '');
-    final priceCtrl = TextEditingController(text: existingProduct?.price.toString() ?? '499.00');
-    final origPriceCtrl = TextEditingController(text: existingProduct?.originalPrice.toString() ?? '599.00');
+    final priceCtrl = TextEditingController(text: existingProduct?.price.toString() ?? '14999.00');
+    final origPriceCtrl = TextEditingController(text: existingProduct?.originalPrice.toString() ?? '19999.00');
     final stockCtrl = TextEditingController(text: existingProduct?.stockQuantity.toString() ?? '20');
     final imageCtrl = TextEditingController(
         text: existingProduct != null && existingProduct.imageUrls.isNotEmpty
             ? existingProduct.imageUrls.first
             : 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800');
-    String category = existingProduct?.category ?? 'Laptops';
+    final availableCategories = store.allCategories.map((c) => c.name).toList();
+    if (availableCategories.isEmpty) {
+      availableCategories.addAll(['Laptops', 'Audio', 'Keyboards', 'Monitors', 'Components', 'Wearables']);
+    }
+    String category = (existingProduct != null && availableCategories.contains(existingProduct.category))
+        ? existingProduct.category
+        : (availableCategories.contains('Laptops') ? 'Laptops' : availableCategories.first);
 
     showDialog(
       context: context,
@@ -1235,8 +1267,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         child: DropdownButtonFormField<String>(
                           value: category,
                           decoration: const InputDecoration(labelText: 'Category'),
-                          items: MockData.categories
-                              .where((c) => c != 'All')
+                          items: availableCategories
                               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                               .toList(),
                           onChanged: (val) => setDialogState(() => category = val!),
@@ -1247,9 +1278,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Price (\$)'))),
+                      Expanded(child: TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Price (₹)'))),
                       const SizedBox(width: 12),
-                      Expanded(child: TextField(controller: origPriceCtrl, decoration: const InputDecoration(labelText: 'Original Price (\$)'))),
+                      Expanded(child: TextField(controller: origPriceCtrl, decoration: const InputDecoration(labelText: 'Original Price (₹)'))),
                       const SizedBox(width: 12),
                       Expanded(child: TextField(controller: stockCtrl, decoration: const InputDecoration(labelText: 'Stock Qty'))),
                     ],
@@ -1266,7 +1297,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () {
-                final price = double.tryParse(priceCtrl.text) ?? 199.0;
+                final price = double.tryParse(priceCtrl.text) ?? 4999.0;
                 final origPrice = double.tryParse(origPriceCtrl.text) ?? price;
                 final stock = int.tryParse(stockCtrl.text) ?? 10;
 

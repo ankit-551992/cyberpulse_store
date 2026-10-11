@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import '../../utils/currency_helper.dart';
 import '../../providers/store_provider.dart';
 import '../../theme/cyber_colors.dart';
 import 'product_detail_screen.dart';
@@ -14,7 +14,6 @@ class WishlistScreen extends StatelessWidget {
     final store = context.watch<StoreProvider>();
     final isDark = store.isDarkMode;
     final wishlist = store.wishlistProducts;
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     return Scaffold(
       appBar: AppBar(
@@ -139,7 +138,7 @@ class WishlistScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    currency.format(product.price),
+                                    CurrencyHelper.format(product.price),
                                     style: GoogleFonts.spaceGrotesk(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 15,

@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/cyber_colors.dart';
 import '../providers/store_provider.dart';
 import 'responsive_layout.dart';
+import 'auth_modal.dart';
+import 'user_profile_modal.dart';
 
 class CyberNavbar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onOpenCart;
@@ -220,9 +222,26 @@ class CyberNavbar extends StatelessWidget implements PreferredSizeWidget {
                     letterSpacing: 0.5,
                   ),
                 ),
-                onPressed: () => store.toggleUserRole(),
+                onPressed: () {
+                  if (store.isAdminMode) {
+                    store.setAdminMode(false);
+                  } else {
+                    if (store.isCurrentUserAdmin) {
+                      store.setAdminMode(true);
+                    } else {
+                      AuthModal.show(
+                        context,
+                        requireAdmin: true,
+                        onSuccess: () => store.setAdminMode(true),
+                      );
+                    }
+                  }
+                },
               ),
             ),
+
+            // User Profile / Authentication Button
+            _buildUserAuthButton(context, store, isDark, isDesktop),
 
             // Theme Toggle
             IconButton(
@@ -324,6 +343,107 @@ class CyberNavbar extends StatelessWidget implements PreferredSizeWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUserAuthButton(
+    BuildContext context,
+    StoreProvider store,
+    bool isDark,
+    bool isDesktop,
+  ) {
+    final user = store.currentUser;
+
+    if (user != null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: InkWell(
+          onTap: () => UserProfileModal.show(context),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 10 : 6,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? CyberColors.darkSurfaceLight : CyberColors.lightSurfaceAlt,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: user.isAdmin
+                    ? CyberColors.purpleNeon.withOpacity(0.6)
+                    : CyberColors.cyanPrimary.withOpacity(0.4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: user.isAdmin
+                        ? CyberColors.neonPurpleGradient
+                        : CyberColors.primaryGradient,
+                  ),
+                  child: Center(
+                    child: Text(
+                      user.initials,
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: user.isAdmin ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+                if (isDesktop) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    user.name.split(' ').first,
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    user.isAdmin ? Icons.shield_rounded : Icons.keyboard_arrow_down_rounded,
+                    size: 14,
+                    color: user.isAdmin ? CyberColors.purpleNeon : Colors.grey,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Guest / Not logged in
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      height: 36,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.symmetric(horizontal: isDesktop ? 12 : 8),
+          side: const BorderSide(color: CyberColors.cyanPrimary, width: 1.2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        ),
+        icon: const Icon(Icons.login_rounded, size: 16, color: CyberColors.cyanPrimary),
+        label: isDesktop
+            ? Text(
+                'Sign In',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: CyberColors.cyanPrimary,
+                ),
+              )
+            : const SizedBox.shrink(),
+        onPressed: () => AuthModal.show(context),
       ),
     );
   }

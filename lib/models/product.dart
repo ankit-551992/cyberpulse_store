@@ -1,5 +1,6 @@
 class Product {
   final String id;
+  final String sku;
   final String name;
   final String brand;
   final String category;
@@ -7,6 +8,9 @@ class Product {
   final double price;
   final double originalPrice;
   final int stockQuantity;
+  final int lowStockThreshold;
+  final String warehouseLocation;
+  final Map<String, int> colorStock;
   final double rating;
   final int reviewCount;
   final List<String> imageUrls;
@@ -19,6 +23,7 @@ class Product {
 
   Product({
     required this.id,
+    String? sku,
     required this.name,
     required this.brand,
     required this.category,
@@ -26,6 +31,9 @@ class Product {
     required this.price,
     required this.originalPrice,
     required this.stockQuantity,
+    this.lowStockThreshold = 5,
+    this.warehouseLocation = 'Bengaluru Central Hub - Bay A-1',
+    Map<String, int>? colorStock,
     this.rating = 4.8,
     this.reviewCount = 0,
     required this.imageUrls,
@@ -35,7 +43,9 @@ class Product {
     this.isFeatured = false,
     this.isTrending = false,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+  })  : sku = sku ?? 'SKU-${id.toUpperCase().replaceAll("PROD-", "")}',
+        colorStock = colorStock ?? {},
+        createdAt = createdAt ?? DateTime.now();
 
   int get discountPercentage {
     if (originalPrice <= price) return 0;
@@ -43,10 +53,22 @@ class Product {
   }
 
   bool get isInStock => stockQuantity > 0;
-  bool get isLowStock => stockQuantity > 0 && stockQuantity <= 5;
+  bool get isOutOfStock => stockQuantity <= 0;
+  bool get isLowStock => stockQuantity > 0 && stockQuantity <= lowStockThreshold;
+
+  double get totalValuation => stockQuantity * price;
+
+  int getStockForColor(String color) {
+    if (colorStock.containsKey(color)) {
+      return colorStock[color] ?? 0;
+    }
+    // If colorStock is not specifically broken down, distribute stock or return total
+    return stockQuantity;
+  }
 
   Product copyWith({
     String? id,
+    String? sku,
     String? name,
     String? brand,
     String? category,
@@ -54,6 +76,9 @@ class Product {
     double? price,
     double? originalPrice,
     int? stockQuantity,
+    int? lowStockThreshold,
+    String? warehouseLocation,
+    Map<String, int>? colorStock,
     double? rating,
     int? reviewCount,
     List<String>? imageUrls,
@@ -66,6 +91,7 @@ class Product {
   }) {
     return Product(
       id: id ?? this.id,
+      sku: sku ?? this.sku,
       name: name ?? this.name,
       brand: brand ?? this.brand,
       category: category ?? this.category,
@@ -73,6 +99,9 @@ class Product {
       price: price ?? this.price,
       originalPrice: originalPrice ?? this.originalPrice,
       stockQuantity: stockQuantity ?? this.stockQuantity,
+      lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
+      warehouseLocation: warehouseLocation ?? this.warehouseLocation,
+      colorStock: colorStock ?? this.colorStock,
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
       imageUrls: imageUrls ?? this.imageUrls,
@@ -87,6 +116,7 @@ class Product {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'sku': sku,
     'name': name,
     'brand': brand,
     'category': category,
@@ -94,6 +124,9 @@ class Product {
     'price': price,
     'originalPrice': originalPrice,
     'stockQuantity': stockQuantity,
+    'lowStockThreshold': lowStockThreshold,
+    'warehouseLocation': warehouseLocation,
+    'colorStock': colorStock,
     'rating': rating,
     'reviewCount': reviewCount,
     'imageUrls': imageUrls,
@@ -107,6 +140,7 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
     id: json['id'] as String,
+    sku: json['sku'] as String?,
     name: json['name'] as String,
     brand: json['brand'] as String,
     category: json['category'] as String,
@@ -114,6 +148,11 @@ class Product {
     price: (json['price'] as num).toDouble(),
     originalPrice: (json['originalPrice'] as num).toDouble(),
     stockQuantity: (json['stockQuantity'] as num).toInt(),
+    lowStockThreshold: (json['lowStockThreshold'] as num?)?.toInt() ?? 5,
+    warehouseLocation: json['warehouseLocation'] as String? ?? 'Bengaluru Central Hub - Bay A-1',
+    colorStock: json['colorStock'] != null
+        ? Map<String, int>.from(json['colorStock'] as Map)
+        : {},
     rating: (json['rating'] as num?)?.toDouble() ?? 4.8,
     reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
     imageUrls: List<String>.from(json['imageUrls'] ?? []),

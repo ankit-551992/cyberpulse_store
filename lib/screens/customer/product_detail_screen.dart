@@ -1,9 +1,9 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import '../../utils/currency_helper.dart';
 import '../../models/product.dart';
-import '../../models/review.dart';
 import '../../providers/store_provider.dart';
 import '../../theme/cyber_colors.dart';
 import '../../widgets/cyber_badge.dart';
@@ -106,7 +106,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final isDark = store.isDarkMode;
     final isWish = store.isWishlisted(widget.product.id);
     final isDesktop = ResponsiveLayout.isDesktop(context);
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     return Scaffold(
       appBar: AppBar(
@@ -137,7 +136,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [
                       Expanded(flex: 5, child: _buildImageGallery(isDark)),
                       const SizedBox(width: 48),
-                      Expanded(flex: 6, child: _buildProductDetails(store, isDark, currency)),
+                      Expanded(flex: 6, child: _buildProductDetails(store, isDark)),
                     ],
                   )
                 else
@@ -145,7 +144,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [
                       _buildImageGallery(isDark),
                       const SizedBox(height: 28),
-                      _buildProductDetails(store, isDark, currency),
+                      _buildProductDetails(store, isDark),
                     ],
                   ),
 
@@ -192,7 +191,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: Image.network(
               images[_selectedImageIndex],
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.devices, size: 64)),
+              errorBuilder: (_, error, stack) => const Center(child: Icon(Icons.devices, size: 64)),
             ),
           ),
         ),
@@ -233,7 +232,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildProductDetails(StoreProvider store, bool isDark, NumberFormat currency) {
+  Widget _buildProductDetails(StoreProvider store, bool isDark) {
     final inStock = widget.product.isInStock;
 
     return Column(
@@ -310,7 +309,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              currency.format(widget.product.price),
+              CurrencyHelper.format(widget.product.price),
               style: GoogleFonts.spaceGrotesk(
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
@@ -323,7 +322,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             if (widget.product.originalPrice > widget.product.price) ...[
               const SizedBox(width: 14),
               Text(
-                currency.format(widget.product.originalPrice),
+                CurrencyHelper.format(widget.product.originalPrice),
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   decoration: TextDecoration.lineThrough,
@@ -702,7 +701,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
-                            Text('\$${p.price.toStringAsFixed(2)}',
+                            Text(CurrencyHelper.format(p.price),
                                 style: GoogleFonts.spaceGrotesk(
                                     color: CyberColors.cyanPrimary, fontWeight: FontWeight.bold)),
                           ],

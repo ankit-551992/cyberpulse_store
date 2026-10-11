@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../utils/currency_helper.dart';
 import '../providers/store_provider.dart';
 import '../theme/cyber_colors.dart';
 import '../models/order.dart';
 import '../screens/customer/order_tracking_screen.dart';
+import 'auth_modal.dart';
 
 class CheckoutModal extends StatefulWidget {
   const CheckoutModal({super.key});
@@ -19,16 +21,34 @@ class _CheckoutModalState extends State<CheckoutModal> {
 
   // Form Fields
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Neo Anderson');
-  final _emailController = TextEditingController(text: 'neo@matrix.io');
-  final _phoneController = TextEditingController(text: '+1 (555) 749-3820');
-  final _addressController = TextEditingController(text: '777 Cyber Boulevard, Suite 2100');
-  final _cityController = TextEditingController(text: 'San Francisco, CA');
-  final _zipController = TextEditingController(text: '94107');
+  final _nameController = TextEditingController(text: 'Aarav Sharma');
+  final _emailController = TextEditingController(text: 'aarav.sharma@cyberpulse.in');
+  final _phoneController = TextEditingController(text: '+91 98765 43210');
+  final _addressController = TextEditingController(text: 'Flat 402, Cyber Heights, Indiranagar 100ft Road');
+  final _cityController = TextEditingController(text: 'Bengaluru, Karnataka');
+  final _zipController = TextEditingController(text: '560038');
 
-  String _selectedPaymentMethod = 'Apple Pay / Google Pay';
+  String _selectedPaymentMethod = 'UPI Instant (GPay / PhonePe / Paytm / BHIM)';
   bool _isProcessing = false;
   OrderModel? _placedOrder;
+
+  @override
+  void initState() {
+    super.initState();
+    final store = Provider.of<StoreProvider>(context, listen: false);
+    final user = store.currentUser;
+    if (user != null) {
+      _nameController.text = user.name;
+      _emailController.text = user.email;
+      _phoneController.text = user.phone;
+      if (user.street.isNotEmpty) _addressController.text = user.street;
+      if (user.city.isNotEmpty) {
+        final stateSuffix = user.state.isNotEmpty ? ', ${user.state}' : '';
+        _cityController.text = '${user.city}$stateSuffix';
+      }
+      if (user.pincode.isNotEmpty) _zipController.text = user.pincode;
+    }
+  }
 
   @override
   void dispose() {
@@ -67,7 +87,6 @@ class _CheckoutModalState extends State<CheckoutModal> {
   Widget build(BuildContext context) {
     final store = context.watch<StoreProvider>();
     final isDark = store.isDarkMode;
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     if (_placedOrder != null) {
       return _buildSuccessScreen(_placedOrder!, isDark);
@@ -181,7 +200,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
                           ],
                         ),
                       )
-                    : _buildStepContent(store, isDark, currency),
+                    : _buildStepContent(store, isDark),
               ),
             ),
 
@@ -226,7 +245,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
                       },
                       child: Text(
                         _currentStep == 2
-                            ? 'Authorize & Pay ${currency.format(store.totalAmount)}'
+                            ? 'Authorize & Pay ${CurrencyHelper.format(store.totalAmount)}'
                             : 'Continue to ${_currentStep == 0 ? "Payment" : "Review"}',
                       ),
                     ),
@@ -287,7 +306,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
     );
   }
 
-  Widget _buildStepContent(StoreProvider store, bool isDark, NumberFormat currency) {
+  Widget _buildStepContent(StoreProvider store, bool isDark) {
     if (_currentStep == 0) {
       // Step 1: Shipping Info
       return Form(
@@ -299,7 +318,91 @@ class _CheckoutModalState extends State<CheckoutModal> {
               'Shipping & Contact Details',
               style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
+
+            // Auth State Banner
+            if (store.currentUser != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: CyberColors.cyanPrimary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: CyberColors.cyanPrimary.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_user_rounded, color: CyberColors.cyanPrimary, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Autofilled for ${store.currentUser!.name} (${store.currentUser!.email})',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? CyberColors.darkSurfaceLight : CyberColors.lightSurfaceAlt,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: isDark ? CyberColors.darkBorder : CyberColors.lightBorder),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Checking out as Guest. Have an account?',
+                        style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                      ),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                      ),
+                      onPressed: () {
+                        AuthModal.show(
+                          context,
+                          onSuccess: () {
+                            final user = store.currentUser;
+                            if (user != null) {
+                              setState(() {
+                                _nameController.text = user.name;
+                                _emailController.text = user.email;
+                                _phoneController.text = user.phone;
+                                if (user.street.isNotEmpty) _addressController.text = user.street;
+                                if (user.city.isNotEmpty) _cityController.text = user.city;
+                                if (user.pincode.isNotEmpty) _zipController.text = user.pincode;
+                              });
+                            }
+                          },
+                        );
+                      },
+                      child: Text(
+                        'Sign In',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: CyberColors.cyanPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 4),
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline)),
@@ -346,7 +449,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
                 Expanded(
                   child: TextFormField(
                     controller: _zipController,
-                    decoration: const InputDecoration(labelText: 'ZIP / Postal Code'),
+                    decoration: const InputDecoration(labelText: 'PIN Code (6 digits)'),
                     validator: (v) => v == null || v.isEmpty ? 'Enter ZIP' : null,
                   ),
                 ),
@@ -358,10 +461,11 @@ class _CheckoutModalState extends State<CheckoutModal> {
     } else if (_currentStep == 1) {
       // Step 2: Payment
       final methods = [
-        {'title': 'Apple Pay / Google Pay', 'desc': 'Instant 1-touch biometric checkout', 'icon': Icons.fingerprint_rounded},
-        {'title': 'Credit / Debit Card', 'desc': 'Visa, Mastercard, Amex, UnionPay', 'icon': Icons.credit_card_rounded},
-        {'title': 'Crypto Web3 (USDC / SOL)', 'desc': 'Decentralized instant escrow', 'icon': Icons.currency_bitcoin_rounded},
-        {'title': 'Cash on Delivery (COD)', 'desc': 'Pay when package arrives at your door', 'icon': Icons.local_atm_rounded},
+        {'title': 'UPI Instant (GPay / PhonePe / Paytm / BHIM)', 'desc': 'Instant zero-fee transfer via any UPI ID or scan QR code', 'icon': Icons.qr_code_scanner_rounded},
+        {'title': 'Credit / Debit Card (RuPay, Visa, Mastercard)', 'desc': 'Domestic & International cards with OTP secure verification', 'icon': Icons.credit_card_rounded},
+        {'title': 'No-Cost EMI / PayLater', 'desc': 'Flexible zero-interest EMI from ₹1,499/mo on major bank credit cards', 'icon': Icons.calculate_outlined},
+        {'title': 'Net Banking (50+ Indian Banks)', 'desc': 'Instant bank transfer via SBI, HDFC, ICICI, Axis & Kotak', 'icon': Icons.account_balance_rounded},
+        {'title': 'Cash on Delivery (COD)', 'desc': 'Pay in cash or UPI scan when parcel arrives at your doorstep', 'icon': Icons.payments_rounded},
       ];
 
       return Column(
@@ -478,7 +582,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
                         width: 36,
                         height: 36,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.devices, size: 24),
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.devices, size: 24),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -491,7 +595,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
                       ),
                     ),
                     Text(
-                      currency.format(item.totalPrice),
+                      CurrencyHelper.format(item.totalPrice),
                       style: GoogleFonts.spaceGrotesk(fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -504,7 +608,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Subtotal', style: GoogleFonts.inter(fontSize: 12)),
-              Text(currency.format(store.subtotal), style: GoogleFonts.spaceGrotesk(fontSize: 12)),
+              Text(CurrencyHelper.format(store.subtotal), style: GoogleFonts.spaceGrotesk(fontSize: 12)),
             ],
           ),
           if (store.discountAmount > 0) ...[
@@ -514,7 +618,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
               children: [
                 Text('Discount (${store.appliedPromoCode})',
                     style: GoogleFonts.inter(fontSize: 12, color: CyberColors.emeraldGreen)),
-                Text('-${currency.format(store.discountAmount)}',
+                Text('-${CurrencyHelper.format(store.discountAmount)}',
                     style: GoogleFonts.spaceGrotesk(fontSize: 12, color: CyberColors.emeraldGreen)),
               ],
             ),
@@ -524,7 +628,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Shipping', style: GoogleFonts.inter(fontSize: 12)),
-              Text(store.shippingFee == 0 ? 'FREE' : currency.format(store.shippingFee),
+              Text(store.shippingFee == 0 ? 'FREE' : CurrencyHelper.format(store.shippingFee),
                   style: GoogleFonts.spaceGrotesk(fontSize: 12)),
             ],
           ),
@@ -532,8 +636,8 @@ class _CheckoutModalState extends State<CheckoutModal> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Taxes & Surcharges', style: GoogleFonts.inter(fontSize: 12)),
-              Text(currency.format(store.estimatedTax), style: GoogleFonts.spaceGrotesk(fontSize: 12)),
+              Text('GST (18% CGST + SGST)', style: GoogleFonts.inter(fontSize: 12)),
+              Text(CurrencyHelper.format(store.estimatedTax), style: GoogleFonts.spaceGrotesk(fontSize: 12)),
             ],
           ),
           const Divider(height: 16),
@@ -542,7 +646,7 @@ class _CheckoutModalState extends State<CheckoutModal> {
             children: [
               Text('Grand Total', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold)),
               Text(
-                currency.format(store.totalAmount),
+                CurrencyHelper.format(store.totalAmount),
                 style: GoogleFonts.spaceGrotesk(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,

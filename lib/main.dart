@@ -9,6 +9,8 @@ import 'screens/customer/wishlist_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'widgets/cyber_navbar.dart';
 import 'widgets/cart_drawer.dart';
+import 'widgets/auth_modal.dart';
+import 'widgets/user_profile_modal.dart';
 import 'data/mock_data.dart';
 
 void main() {
@@ -144,39 +146,99 @@ class _MainStoreShellState extends State<MainStoreShell> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Drawer Header
+            // Drawer Header / User Profile
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      gradient: CyberColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.bolt_rounded, size: 22, color: Colors.black),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'CYBERPULSE',
-                        style: GoogleFonts.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.0,
+              padding: const EdgeInsets.all(16),
+              child: store.currentUser != null
+                  ? InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        UserProfileModal.show(context);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? CyberColors.darkSurfaceLight : CyberColors.lightSurfaceAlt,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: store.currentUser!.isAdmin
+                                ? CyberColors.purpleNeon.withOpacity(0.5)
+                                : CyberColors.cyanPrimary.withOpacity(0.4),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: store.currentUser!.isAdmin
+                                    ? CyberColors.neonPurpleGradient
+                                    : CyberColors.primaryGradient,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  store.currentUser!.initials,
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.w900,
+                                    color: store.currentUser!.isAdmin ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    store.currentUser!.name,
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    store.currentUser!.role.badgeLabel,
+                                    style: GoogleFonts.spaceGrotesk(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: store.currentUser!.isAdmin
+                                          ? CyberColors.purpleNeon
+                                          : CyberColors.cyanPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+                          ],
                         ),
                       ),
-                      Text(
-                        'Next-Gen Tech Catalog',
-                        style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                    )
+                  : OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        side: const BorderSide(color: CyberColors.cyanPrimary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                      icon: const Icon(Icons.login_rounded, color: CyberColors.cyanPrimary, size: 18),
+                      label: Text(
+                        'Sign In / Register',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontWeight: FontWeight.bold,
+                          color: CyberColors.cyanPrimary,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        AuthModal.show(context);
+                      },
+                    ),
             ),
             const Divider(height: 1),
 
@@ -275,7 +337,15 @@ class _MainStoreShellState extends State<MainStoreShell> {
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
-                    store.setAdminMode(true);
+                    if (store.isCurrentUserAdmin) {
+                      store.setAdminMode(true);
+                    } else {
+                      AuthModal.show(
+                        context,
+                        requireAdmin: true,
+                        onSuccess: () => store.setAdminMode(true),
+                      );
+                    }
                   },
                 ),
               ),

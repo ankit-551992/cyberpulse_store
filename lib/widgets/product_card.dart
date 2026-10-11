@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import '../utils/currency_helper.dart';
 import '../models/product.dart';
 import '../providers/store_provider.dart';
 import '../theme/cyber_colors.dart';
@@ -28,7 +28,7 @@ class _ProductCardState extends State<ProductCard> {
     final store = context.watch<StoreProvider>();
     final isDark = store.isDarkMode;
     final isWish = store.isWishlisted(widget.product.id);
-    final currencyFormatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -285,7 +285,7 @@ class _ProductCardState extends State<ProductCard> {
                               children: [
                                 if (widget.product.originalPrice > widget.product.price)
                                   Text(
-                                    currencyFormatter.format(widget.product.originalPrice),
+                                    CurrencyHelper.format(widget.product.originalPrice),
                                     style: GoogleFonts.inter(
                                       fontSize: 11,
                                       decoration: TextDecoration.lineThrough,
@@ -295,7 +295,7 @@ class _ProductCardState extends State<ProductCard> {
                                     ),
                                   ),
                                 Text(
-                                  currencyFormatter.format(widget.product.price),
+                                  CurrencyHelper.format(widget.product.price),
                                   style: GoogleFonts.spaceGrotesk(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,

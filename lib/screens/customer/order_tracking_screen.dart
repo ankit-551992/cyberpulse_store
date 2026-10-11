@@ -7,6 +7,7 @@ import '../../models/order.dart';
 import '../../providers/store_provider.dart';
 import '../../theme/cyber_colors.dart';
 import '../../widgets/cyber_badge.dart';
+import '../../utils/currency_helper.dart';
 
 class OrderTrackingScreen extends StatelessWidget {
   final OrderModel order;
@@ -17,7 +18,6 @@ class OrderTrackingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.watch<StoreProvider>();
     final isDark = store.isDarkMode;
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     
     // Find live order from provider in case status was updated
     final liveOrder = store.orders.firstWhere(
@@ -172,7 +172,7 @@ class OrderTrackingScreen extends StatelessWidget {
                       _timelineLine(isCompleted: _isStepDone(liveOrder.status, 3)),
                       _timelineStep(
                         title: 'Dispatched via Express Courier',
-                        subtitle: 'Carrier: CyberSprint Priority Flight',
+                        subtitle: 'Carrier: Delhivery Surface Express / Blue Dart Air',
                         icon: Icons.flight_takeoff_rounded,
                         isCompleted: _isStepDone(liveOrder.status, 3),
                         isDark: isDark,
@@ -250,7 +250,7 @@ class OrderTrackingScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${item.quantity} x ${currency.format(item.product.price)}',
+                                  '${item.quantity} x ${CurrencyHelper.format(item.product.price)}',
                                   style: GoogleFonts.spaceGrotesk(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
@@ -280,12 +280,12 @@ class OrderTrackingScreen extends StatelessWidget {
                       const Divider(height: 32),
 
                       // Financial summary
-                      _row('Subtotal', currency.format(liveOrder.subtotal), isDark),
+                      _row('Subtotal', CurrencyHelper.format(liveOrder.subtotal), isDark),
                       if (liveOrder.discount > 0)
-                        _row('Discount Applied', '-${currency.format(liveOrder.discount)}', isDark,
+                        _row('Discount Applied', '-${CurrencyHelper.format(liveOrder.discount)}', isDark,
                             color: CyberColors.emeraldGreen),
-                      _row('Shipping Fee', liveOrder.shippingFee == 0 ? 'FREE' : currency.format(liveOrder.shippingFee), isDark),
-                      _row('Tax', currency.format(liveOrder.tax), isDark),
+                      _row('Shipping Fee', liveOrder.shippingFee == 0 ? 'FREE' : CurrencyHelper.format(liveOrder.shippingFee), isDark),
+                      _row('GST (18% CGST + SGST)', CurrencyHelper.format(liveOrder.tax), isDark),
                       const Divider(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -295,7 +295,7 @@ class OrderTrackingScreen extends StatelessWidget {
                             style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            currency.format(liveOrder.total),
+                            CurrencyHelper.format(liveOrder.total),
                             style: GoogleFonts.spaceGrotesk(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,

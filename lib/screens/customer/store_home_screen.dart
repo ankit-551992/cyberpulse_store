@@ -7,6 +7,7 @@ import '../../widgets/responsive_layout.dart';
 import '../../widgets/product_card.dart';
 import '../../data/mock_data.dart';
 import 'product_detail_screen.dart';
+import '../../utils/currency_helper.dart';
 
 class StoreHomeScreen extends StatefulWidget {
   const StoreHomeScreen({super.key});
@@ -58,18 +59,18 @@ class _StoreHomeScreenState extends State<StoreHomeScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'Price Range: \$${currentRange.start.toInt()} - \$${currentRange.end.toInt()}',
+                'Price Range: ${CurrencyHelper.format(currentRange.start)} - ${CurrencyHelper.format(currentRange.end)}',
                 style: GoogleFonts.spaceGrotesk(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               RangeSlider(
                 values: currentRange,
                 min: 0,
-                max: 5000,
-                divisions: 50,
+                max: 300000,
+                divisions: 60,
                 activeColor: CyberColors.cyanPrimary,
                 labels: RangeLabels(
-                  '\$${currentRange.start.toInt()}',
-                  '\$${currentRange.end.toInt()}',
+                  CurrencyHelper.format(currentRange.start),
+                  CurrencyHelper.format(currentRange.end),
                 ),
                 onChanged: (vals) {
                   setSheetState(() => currentRange = vals);
@@ -523,8 +524,8 @@ class _StoreHomeScreenState extends State<StoreHomeScreen> {
   Widget _buildTrustSection(bool isDark) {
     final features = [
       {'icon': Icons.bolt_rounded, 'title': 'HyperSpeed Express', 'desc': 'Free 24h tracked dispatch on orders above \$1500'},
-      {'icon': Icons.verified_user_rounded, 'title': '2-Year Warranty', 'desc': 'Comprehensive manufacturer protection on all devices'},
-      {'icon': Icons.swap_horiz_rounded, 'title': '30-Day Escrow Returns', 'desc': 'No questions asked return guarantee with zero hassle'},
+      {'icon': Icons.verified_user_rounded, 'title': '2-Year Warranty', 'desc': 'Comprehensive official warranty with doorstep pickup across India'},
+      {'icon': Icons.swap_horiz_rounded, 'title': '30-Day Escrow Returns', 'desc': 'Hassle-free 30-day replacement & refund across all pincodes'},
       {'icon': Icons.support_agent_rounded, 'title': '24/7 Expert Engineers', 'desc': 'Direct live technical support for setup and specs'},
     ];
 
