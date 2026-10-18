@@ -6,6 +6,7 @@ import '../providers/store_provider.dart';
 import 'responsive_layout.dart';
 import 'auth_modal.dart';
 import 'user_profile_modal.dart';
+import 'database_uplink_modal.dart';
 
 class CyberNavbar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onOpenCart;
@@ -242,6 +243,45 @@ class CyberNavbar extends StatelessWidget implements PreferredSizeWidget {
 
             // User Profile / Authentication Button
             _buildUserAuthButton(context, store, isDark, isDesktop),
+
+            // Database Uplink Button
+            Container(
+              height: 38,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: store.isDatabaseConnected
+                      ? CyberColors.emeraldGreen
+                      : (isDark ? Colors.white70 : Colors.black87),
+                  side: BorderSide(
+                    color: store.isDatabaseConnected
+                        ? CyberColors.emeraldGreen.withOpacity(0.6)
+                        : (isDark ? CyberColors.darkBorder : CyberColors.lightBorder),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.storage_rounded,
+                  size: 16,
+                  color: store.isDatabaseConnected
+                      ? CyberColors.emeraldGreen
+                      : Colors.orangeAccent,
+                ),
+                label: Text(
+                  isDesktop
+                      ? (store.isDatabaseConnected ? 'DB: Cloud' : 'DB: Local')
+                      : 'DB',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+                onPressed: () => DatabaseUplinkModal.show(context),
+              ),
+            ),
 
             // Theme Toggle
             IconButton(

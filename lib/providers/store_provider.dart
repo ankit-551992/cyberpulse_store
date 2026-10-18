@@ -10,12 +10,17 @@ import '../models/category_item.dart';
 import '../models/user_model.dart';
 export '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/database_service.dart';
+import '../services/supabase_config.dart';
 import '../data/mock_data.dart';
 
 class StoreProvider extends ChangeNotifier {
   // Auth Service & State
   final AuthService _authService = AuthService();
   UserModel? _currentUser = AuthService.demoCustomer;
+
+  // Database Service
+  final DatabaseService _databaseService = DatabaseService();
 
   // Product Catalog
   List<Product> _products = List.from(MockData.initialProducts);
@@ -53,6 +58,61 @@ class StoreProvider extends ChangeNotifier {
   bool get isAdminMode => _isAdminMode;
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
+
+  // Database Getters
+  SupabaseConnectionState get dbState => SupabaseConfig.state;
+  bool get isDatabaseConnected => SupabaseConfig.isConnected;
+  String? get dbErrorMessage => SupabaseConfig.errorMessage;
+  String get dbUrl => SupabaseConfig.url;
+
+  Future<bool> connectDatabase({required String url, required String anonKey}) async {
+    final success = await SupabaseConfig.saveCredentials(newUrl: url, newAnonKey: anonKey);
+    if (success) {
+      await refreshFromDatabase();
+    }
+    notifyListeners();
+    return success;
+  }
+
+  Future<void> disconnectDatabase() async {
+    await SupabaseConfig.clearCredentials();
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> testDatabaseConnection() async {
+    return _databaseService.testConnection();
+  }
+
+  Future<int> seedDatabaseToSupabase() async {
+    return _databaseService.seedInitialDataToSupabase();
+  }
+
+  Future<void> refreshFromDatabase() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final cats = await _databaseService.getCategories();
+      if (cats.isNotEmpty) _categories = cats;
+
+      final prods = await _databaseService.getProducts();
+      if (prods.isNotEmpty) _products = prods;
+
+      final ords = await _databaseService.getOrders();
+      if (ords.isNotEmpty) _orders = ords;
+
+      final logs = await _databaseService.getInventoryLogs();
+      if (logs.isNotEmpty) _inventoryLogs = logs;
+
+      final wish = await _databaseService.getWishlist(_currentUser?.id ?? 'guest');
+      _wishlistIds.clear();
+      _wishlistIds.addAll(wish);
+    } catch (e) {
+      debugPrint('StoreProvider refreshFromDatabase error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   // Auth Getters
   UserModel? get currentUser => _currentUser;
@@ -97,7 +157,7 @@ class StoreProvider extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Load products (using inr key to ensure clean conversion)
       final savedProductsJson = prefs.getString('cyberpulse_inr_products_v3');
       if (savedProductsJson != null) {
@@ -142,6 +202,12 @@ class StoreProvider extends ChangeNotifier {
       if (savedUser != null) {
         _currentUser = savedUser;
       }
+
+      // Initialize Supabase if configured and refresh cloud data
+      final connected = await SupabaseConfig.initialize();
+      if (connected) {
+        await refreshFromDatabase();
+      }
     } catch (e) {
       debugPrint('Error loading storage: $e');
     } finally {
@@ -155,6 +221,10 @@ class StoreProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final encoded = jsonEncode(_products.map((p) => p.toJson()).toList());
       await prefs.setString('cyberpulse_inr_products_v3', encoded);
+
+      for (final p in _products) {
+        _databaseService.saveProduct(p);
+      }
     } catch (e) {
       debugPrint('Error saving products: $e');
     }
@@ -165,6 +235,10 @@ class StoreProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final encoded = jsonEncode(_orders.map((o) => o.toJson()).toList());
       await prefs.setString('cyberpulse_inr_orders_v3', encoded);
+
+      for (final o in _orders) {
+        _databaseService.saveOrder(o);
+      }
     } catch (e) {
       debugPrint('Error saving orders: $e');
     }
@@ -175,8 +249,12 @@ class StoreProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final encoded = jsonEncode(_categories.map((c) => c.toJson()).toList());
       await prefs.setString('cyberpulse_categories_v1', encoded);
+
+      for (final c in _categories) {
+        _databaseService.saveCategory(c);
+      }
     } catch (e) {
-      debugPrint('Error saving categories: ');
+      debugPrint('Error saving categories: $e');
     }
   }
 
@@ -185,6 +263,10 @@ class StoreProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final encoded = jsonEncode(_inventoryLogs.take(100).map((l) => l.toJson()).toList());
       await prefs.setString('cyberpulse_inventory_logs_v1', encoded);
+
+      if (_inventoryLogs.isNotEmpty) {
+        _databaseService.saveInventoryLog(_inventoryLogs.first);
+      }
     } catch (e) {
       debugPrint('Error saving inventory logs: $e');
     }
@@ -192,8 +274,7 @@ class StoreProvider extends ChangeNotifier {
 
   Future<void> _saveWishlist() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('cyberpulse_wishlist', _wishlistIds.toList());
+      await _databaseService.setWishlist(_currentUser?.id ?? 'guest', _wishlistIds);
     } catch (e) {
       debugPrint('Error saving wishlist: $e');
     }
@@ -790,11 +871,13 @@ class StoreProvider extends ChangeNotifier {
       await _saveProducts();
     }
 
+    final deletedId = cat.id;
     _categories.removeAt(catIndex);
     if (_selectedCategory == cat.name) {
       _selectedCategory = 'All';
     }
     await _saveCategories();
+    _databaseService.deleteCategory(deletedId);
     notifyListeners();
     return true;
   }

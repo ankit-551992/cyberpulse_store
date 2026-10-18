@@ -10,6 +10,7 @@ import '../../theme/cyber_colors.dart';
 import '../../widgets/cyber_badge.dart';
 import '../../utils/currency_helper.dart';
 import '../../widgets/responsive_layout.dart';
+import '../../widgets/database_uplink_modal.dart';
 import '../customer/order_tracking_screen.dart';
 import 'admin_categories_view.dart';
 
@@ -291,34 +292,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           Row(
             children: [
-              // Real-time status indicator
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: CyberColors.emeraldGreen.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: CyberColors.emeraldGreen.withOpacity(0.4)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: CyberColors.emeraldGreen,
-                        shape: BoxShape.circle,
-                      ),
+              // Interactive Database Uplink Indicator
+              InkWell(
+                onTap: () => DatabaseUplinkModal.show(context),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: store.isDatabaseConnected
+                        ? CyberColors.emeraldGreen.withOpacity(0.15)
+                        : Colors.orangeAccent.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: store.isDatabaseConnected
+                          ? CyberColors.emeraldGreen.withOpacity(0.6)
+                          : Colors.orangeAccent.withOpacity(0.6),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Live Sync Active',
-                      style: GoogleFonts.spaceGrotesk(
-                        fontSize: 11,
-                        color: CyberColors.emeraldGreen,
-                        fontWeight: FontWeight.bold,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: store.isDatabaseConnected
+                              ? CyberColors.emeraldGreen
+                              : Colors.orangeAccent,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: (store.isDatabaseConnected
+                                      ? CyberColors.emeraldGreen
+                                      : Colors.orangeAccent)
+                                  .withOpacity(0.6),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        store.isDatabaseConnected
+                            ? 'DB: SUPABASE CLOUD'
+                            : 'DB: LOCAL CACHE',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 11,
+                          color: store.isDatabaseConnected
+                              ? CyberColors.emeraldGreen
+                              : Colors.orangeAccent,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.settings_outlined,
+                        size: 13,
+                        color: store.isDatabaseConnected
+                            ? CyberColors.emeraldGreen
+                            : Colors.orangeAccent,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
